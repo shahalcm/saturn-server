@@ -15,6 +15,7 @@ const messageSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false },
   readAt: { type: Date },
   isDeleted: { type: Boolean, default: false },
+  isAI: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', messageSchema);
