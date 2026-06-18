@@ -89,6 +89,22 @@ const initSocket = (socketio) => {
       io.to(to).emit('callEnded');
     });
 
+    // Join prayer room
+    socket.on('joinPrayer', (prayerId) => {
+      socket.join(`prayer_${prayerId}`);
+      console.log(`User joined prayer room: prayer_${prayerId}`);
+    });
+
+    // Leave prayer room
+    socket.on('leavePrayer', (prayerId) => {
+      socket.leave(`prayer_${prayerId}`);
+    });
+
+    // Admin sends comment command (hide/pin from admin panel)
+    socket.on('adminCommentAction', ({ prayerId, action, commentId }) => {
+      io.to(`prayer_${prayerId}`).emit('adminCommentAction', { action, commentId });
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
       activeUsers.forEach((socketId, userId) => {
