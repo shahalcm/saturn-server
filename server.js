@@ -80,9 +80,20 @@ app.use('/api/bank', bankRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/fees', feeRoutes);
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: "Saturn Provider API Running"
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: "Server is running" });
+  res.json({
+    success: true,
+    message: "Server is healthy"
+  });
 });
 
 // Error handler
