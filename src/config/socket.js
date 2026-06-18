@@ -24,12 +24,14 @@ const initSocket = (socketio) => {
 
     // Send message
     socket.on('sendMessage', async (data) => {
-      const { senderId, receiverId, message, sessionId } = data;
+      const { senderId, receiverId, message, content, sessionId } = data;
+      const finalMsg = message || content;
 
       const msgData = {
         senderId,
         receiverId,
-        message,
+        message: finalMsg,
+        content: finalMsg,
         sessionId,
         timestamp: new Date(),
         isRead: false,
