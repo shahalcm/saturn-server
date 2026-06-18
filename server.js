@@ -82,7 +82,7 @@ app.use('/api/fees', feeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Saturn API is running', timestamp: new Date() });
+  res.json({ success: true, message: "Server is running" });
 });
 
 // Error handler
