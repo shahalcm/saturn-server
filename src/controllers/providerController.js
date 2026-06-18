@@ -1,5 +1,8 @@
 const Provider = require('../models/Provider');
 const User = require('../models/User');
+const Session = require('../models/Session');
+const Review = require('../models/Review');
+const Commission = require('../models/Commission');
 const { successResponse, errorResponse } = require('../utils/formatResponse');
 const { generateToken, generateRefreshToken } = require('../utils/generateToken');
 const cloudinary = require('../config/cloudinary');
@@ -119,8 +122,6 @@ const registerProvider = async (req, res) => {
       about,
       specialties,
       qualification,
-      hospitalName,
-      maxStudents,
       uploadedDoc
     } = req.body;
 
@@ -177,11 +178,195 @@ const registerProvider = async (req, res) => {
   }
 };
 
+// @GET /api/providers/profile — provider gets own profile
+const getMyProfile = async (req, res) => {
+  try {
+    const provider = await Provider.findById(req.userId).select('-password');
+    if (!provider) return errorResponse(res, 'Provider not found', 404);
+    return successResponse(res, provider);
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+// @GET /api/providers/earnings
+const getEarnings = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      providerId: req.userId,
+      status: 'completed',
+    });
+
+    const totalEarned = sessions.reduce((sum, s) => sum + (s.providerEarning || 0), 0);
+    const thisMonth = sessions
+      .filter(s => new Date(s.createdAt).getMonth() === new Date().getMonth())
+      .reduce((sum, s) => sum + (s.providerEarning || 0), 0);
+    const lastMonth = sessions
+      .filter(s => new Date(s.createdAt).getMonth() === new Date().getMonth() - 1)
+      .reduce((sum, s) => sum + (s.providerEarning || 0), 0);
+
+    const chatEarnings = sessions.filter(s => s.type === 'chat').reduce((sum, s) => sum + s.providerEarning, 0);
+    const callEarnings = sessions.filter(s => s.type === 'call').reduce((sum, s) => sum + s.providerEarning, 0);
+    const videoEarnings = sessions.filter(s => s.type === 'video').reduce((sum, s) => sum + s.providerEarning, 0);
+    const classEarnings = sessions.filter(s => s.type === 'class').reduce((sum, s) => sum + s.providerEarning, 0);
+
+    const commissionConfig = await Commission.findOne();
+    const commissionRate = commissionConfig?.chatCommission || 5;
+    const totalCommission = sessions.reduce((sum, s) => sum + (s.commissionAmount || 0), 0);
+
+    return successResponse(res, {
+      totalEarned,
+      thisMonth,
+      lastMonth,
+      chatEarnings,
+      callEarnings,
+      videoEarnings,
+      classEarnings,
+      totalCommission,
+      commissionRate,
+      netEarnings: totalEarned,
+      transactions: sessions.map(s => ({
+        id: s._id,
+        seekerName: s.seekerName || 'Seeker',
+        type: s.type,
+        amount: s.providerEarning,
+        date: s.createdAt,
+      })),
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+// @GET /api/providers/reviews
+const getMyReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ providerId: req.userId })
+      .populate('seekerId', 'name avatar')
+      .sort({ createdAt: -1 });
+
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+      : 0;
+
+    const ratingBreakdown = [5, 4, 3, 2, 1].map(star => ({
+      star,
+      count: reviews.filter(r => r.rating === star).length,
+      percentage: totalReviews > 0
+        ? Math.round((reviews.filter(r => r.rating === star).length / totalReviews) * 100)
+        : 0,
+    }));
+
+    return successResponse(res, {
+      reviews,
+      totalReviews,
+      avgRating: parseFloat(avgRating.toFixed(1)),
+      ratingBreakdown,
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+// @POST /api/reviews — seeker submits review after session
+const createReview = async (req, res) => {
+  try {
+    const { sessionId, providerId, rating, review } = req.body;
+
+    const existing = await Review.findOne({ sessionId, seekerId: req.userId });
+    if (existing) return errorResponse(res, 'Review already submitted');
+
+    const newReview = await Review.create({
+      sessionId,
+      seekerId: req.userId,
+      providerId,
+      rating,
+      review,
+    });
+
+    // Update provider rating
+    const allReviews = await Review.find({ providerId });
+    const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+    await Provider.findByIdAndUpdate(providerId, {
+      rating: parseFloat(avgRating.toFixed(1)),
+      totalReviews: allReviews.length,
+    });
+
+    return successResponse(res, newReview, 'Review submitted', 201);
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+// @PUT /api/providers/fcm-token
+const updateFCMToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    await Provider.findByIdAndUpdate(req.userId, { fcmToken });
+    return successResponse(res, null, 'FCM token updated');
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+// @GET /api/providers/dashboard-stats
+const getDashboardStats = async (req, res) => {
+  try {
+    const providerId = req.userId;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [allSessions, todaySessions, reviews, provider] = await Promise.all([
+      Session.find({ providerId, status: 'completed' }),
+      Session.find({ providerId, status: 'completed', createdAt: { $gte: today } }),
+      Review.find({ providerId }),
+      Provider.findById(providerId),
+    ]);
+
+    const totalEarned = allSessions.reduce((sum, s) => sum + (s.providerEarning || 0), 0);
+    const todayEarned = todaySessions.reduce((sum, s) => sum + (s.providerEarning || 0), 0);
+
+    const upcomingSessions = await Session.find({
+      providerId,
+      status: 'pending',
+    })
+      .populate('seekerId', 'name avatar phone')
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    const recentReviews = await Review.find({ providerId })
+      .populate('seekerId', 'name avatar')
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    return successResponse(res, {
+      totalSessions: allSessions.length,
+      todaySessions: todaySessions.length,
+      totalEarned,
+      todayEarned,
+      rating: provider?.rating || 0,
+      totalReviews: reviews.length,
+      upcomingSessions,
+      recentReviews,
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
 module.exports = {
   getProviders,
   getProviderById,
+  getMyProfile,
   updateProviderProfile,
   updateOnlineStatus,
   uploadDocuments,
-  registerProvider
+  getEarnings,
+  getMyReviews,
+  updateFCMToken,
+  getDashboardStats,
+  registerProvider,
+  createReview,
 };

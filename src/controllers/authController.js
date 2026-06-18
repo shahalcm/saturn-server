@@ -126,6 +126,25 @@ const verifyOTP = async (req, res) => {
       }, 'Login successful');
     }
 
+    if (type === 'provider_login') {
+      let provider = await Provider.findOne({ phone: formattedPhone });
+
+      if (!provider) {
+        return errorResponse(res, 'Provider account not found. Please register first.', 404);
+      }
+
+      provider.isPhoneVerified = true;
+      await provider.save();
+
+      const token = generateToken(provider._id, 'provider');
+
+      return successResponse(res, {
+        token,
+        provider,
+        isNewProvider: false,
+      }, 'Provider login successful');
+    }
+
     if (type === 'signup') {
       const existingUser = await User.findOne({ phone: formattedPhone });
       if (existingUser) {
@@ -156,6 +175,15 @@ const verifyOTP = async (req, res) => {
         email: userData?.email,
         providerType: userData?.providerType,
         religion: userData?.religion,
+        gender: userData?.gender,
+        languages: userData?.languages,
+        location: userData?.location,
+        experience: Number(userData?.experience) || 0,
+        pricePerMin: Number(userData?.pricePerMin) || 0,
+        about: userData?.about,
+        specialties: userData?.specialties,
+        qualification: userData?.qualification,
+        documents: userData?.uploadedDoc ? [userData.uploadedDoc] : [],
         isPhoneVerified: true,
         verificationStatus: 'pending',
       });

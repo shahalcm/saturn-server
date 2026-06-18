@@ -5,7 +5,14 @@ const { successResponse, errorResponse } = require('../utils/formatResponse');
 const getCourses = async (req, res) => {
   try {
     const { religion, level, subject, search, limit = 20, page = 1 } = req.query;
-    const filter = { isActive: true };
+    const filter = {};
+    if (req.query.isActive !== undefined) {
+      if (req.query.isActive !== 'all') {
+        filter.isActive = req.query.isActive === 'true';
+      }
+    } else {
+      filter.isActive = true;
+    }
 
     if (religion) filter.religion = religion;
     if (level) filter.level = level;

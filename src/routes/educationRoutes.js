@@ -8,7 +8,7 @@ router.get('/', getCourses);
 router.get('/:id', getCourseById);
 router.post('/', protect, createCourse);
 router.put('/:id', protect, updateCourse);
-router.delete('/:id', protect, adminProtect, deleteCourse);
+router.delete('/:id', adminProtect, deleteCourse);
 router.post('/:id/enroll', protect, enrollStudent);
 
 module.exports = router;

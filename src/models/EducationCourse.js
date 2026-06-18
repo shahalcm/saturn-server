@@ -26,6 +26,7 @@ const courseSchema = new mongoose.Schema({
   totalReviews: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   thumbnail: { type: String },
+  meetLink: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('EducationCourse', courseSchema);

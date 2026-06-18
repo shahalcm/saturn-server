@@ -27,6 +27,11 @@ const communityRoutes = require('./src/routes/communityRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const advertisementRoutes = require('./src/routes/advertisementRoutes');
 const reviewRoutes = require('./src/routes/reviewRoutes');
+const agoraRoutes = require('./src/routes/agoraRoutes');
+const supportRoutes = require('./src/routes/supportRoutes');
+const bankRoutes = require('./src/routes/bankRoutes');
+const courseRoutes = require('./src/routes/courseRoutes');
+const feeRoutes = require('./src/routes/feeRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -69,6 +74,11 @@ app.use('/api/community', communityRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/agora', agoraRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/bank', bankRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/fees', feeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

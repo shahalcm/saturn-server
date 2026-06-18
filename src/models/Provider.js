@@ -44,6 +44,7 @@ const providerSchema = new mongoose.Schema({
   isPhoneVerified: { type: Boolean, default: false },
   isBanned: { type: Boolean, default: false },
   lastActive: { type: Date, default: Date.now },
+  meetLink: { type: String },
 }, { timestamps: true });
 
 providerSchema.pre('save', async function(next) {

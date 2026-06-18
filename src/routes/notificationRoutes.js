@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.get('/', protect, getNotifications);
 router.put('/:id/read', protect, markRead);
-router.post('/', protect, adminProtect, sendNotification);
+router.post('/', adminProtect, sendNotification);
 
 module.exports = router;

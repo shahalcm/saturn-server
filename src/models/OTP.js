@@ -5,7 +5,7 @@ const otpSchema = new mongoose.Schema({
   otp: { type: String, required: true },
   type: {
     type: String,
-    enum: ['login', 'signup', 'reset', 'provider_signup'],
+    enum: ['login', 'signup', 'reset', 'provider_signup', 'provider_login'],
     default: 'login',
   },
   isVerified: { type: Boolean, default: false },

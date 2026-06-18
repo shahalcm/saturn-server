@@ -17,7 +17,13 @@ const startSession = async (req, res) => {
     if (provider.verificationStatus !== 'verified') return errorResponse(res, 'Provider not verified');
 
     const commissionConfig = await Commission.findOne();
-    const commissionRate = commissionConfig?.chatCommission || 15;
+    let commissionRate = 5;
+    if (commissionConfig) {
+      if (type === 'chat') commissionRate = commissionConfig.chatCommission || 5;
+      else if (type === 'call') commissionRate = commissionConfig.callCommission || 5;
+      else if (type === 'video') commissionRate = commissionConfig.videoCommission || 5;
+      else if (type === 'class') commissionRate = commissionConfig.educationCommission || 5;
+    }
 
     const session = await Session.create({
       seekerId: req.userId,

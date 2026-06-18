@@ -6,9 +6,9 @@ const router = express.Router();
 
 router.get('/', getPrayers);
 router.get('/live', getLivePrayers);
-router.post('/', protect, adminProtect, createPrayer);
-router.put('/:id/start', protect, adminProtect, startPrayer);
-router.put('/:id/end', protect, adminProtect, endPrayer);
-router.put('/:id/cancel', protect, adminProtect, cancelPrayer);
+router.post('/', adminProtect, createPrayer);
+router.put('/:id/start', adminProtect, startPrayer);
+router.put('/:id/end', adminProtect, endPrayer);
+router.put('/:id/cancel', adminProtect, cancelPrayer);
 
 module.exports = router;
