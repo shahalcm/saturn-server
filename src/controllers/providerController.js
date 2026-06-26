@@ -11,13 +11,22 @@ const fs = require('fs');
 // @GET /api/providers — get all verified providers
 const getProviders = async (req, res) => {
   try {
-    const { type, religion, language, specialty, isOnline, page = 1, limit = 20 } = req.query;
+    const { type, religion, language, languages, specialty, isOnline, page = 1, limit = 20 } = req.query;
 
     const filter = { verificationStatus: 'verified', isBanned: false };
 
     if (type) filter.providerType = type;
     if (religion) filter.religion = religion;
-    if (language) filter.languages = { $in: [language] };
+    if (language) {
+      filter.languages = { $in: [language] };
+    } else if (languages) {
+      const langList = Array.isArray(languages)
+        ? languages
+        : languages.split(',').map(l => l.trim()).filter(Boolean);
+      if (langList.length > 0) {
+        filter.languages = { $in: langList };
+      }
+    }
     if (specialty) filter.specialties = { $in: [specialty] };
     if (isOnline === 'true') filter.isOnline = true;
 
