@@ -241,4 +241,22 @@ const refreshToken = async (req, res) => {
   }
 };
 
-module.exports = { sendOTP, verifyOTP, adminLogin, refreshToken };
+// @POST /api/auth/check-user
+const checkUser = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return errorResponse(res, 'Phone number is required');
+
+    let formattedPhone = phone;
+    if (!phone.startsWith('+')) {
+      formattedPhone = '+91' + phone;
+    }
+
+    const user = await User.findOne({ phone: formattedPhone });
+    return successResponse(res, { exists: !!user });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
+module.exports = { sendOTP, verifyOTP, adminLogin, refreshToken, checkUser };

@@ -78,8 +78,15 @@ const walletTopup = async (req, res) => {
     );
     return successResponse(res, { walletBalance: user.walletBalance }, 'Wallet topped up');
   } catch (error) {
+// @DELETE /api/users/profile
+const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.userId);
+    if (!user) return errorResponse(res, 'User not found', 404);
+    return successResponse(res, null, 'Account deleted permanently');
+  } catch (error) {
     return errorResponse(res, error.message, 500);
   }
 };
 
-module.exports = { getProfile, updateProfile, updateAvatar, updateFCMToken, walletTopup };
+module.exports = { getProfile, updateProfile, updateAvatar, updateFCMToken, walletTopup, deleteAccount };
