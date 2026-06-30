@@ -78,6 +78,10 @@ const walletTopup = async (req, res) => {
     );
     return successResponse(res, { walletBalance: user.walletBalance }, 'Wallet topped up');
   } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+};
+
 // @DELETE /api/users/profile
 const deleteAccount = async (req, res) => {
   try {
